@@ -1,0 +1,50 @@
+import torch
+import torch.nn as nn
+import torch.optim as optim
+
+class SimpleNN(nn.Module):
+    def __init__(self, input_dim, output_dim):
+        super(SimpleNN, self).__init__()
+        self.fc1 = nn.Linear(input_dim, 128)
+        self.fc2 = nn.Linear(128, output_dim)
+    
+    def forward(self, x):
+        x = torch.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+
+def hard_update(target_net, local_net):
+    """ Copy the weights from local_net to target_net """
+    target_net.load_state_dict(local_net.state_dict())
+
+# Example usage
+input_dim = 4
+output_dim = 2
+local_net = SimpleNN(input_dim, output_dim)
+target_net = SimpleNN(input_dim, output_dim)
+
+# Initialize the target network with the same weights as the local network
+hard_update(target_net, local_net)
+
+# Training loop
+optimizer = optim.Adam(local_net.parameters(), lr=0.001)
+hard_update_interval = 1000  # Perform hard update every 1000 steps
+steps = 0
+
+for epoch in range(10):
+    for step in range(100):  # Assume 100 steps per epoch for simplicity
+        # Example training step
+        state = torch.randn((1, input_dim))
+        action_values = local_net(state)
+        loss = torch.mean(action_values)  # Dummy loss for example purposes
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        
+        # Periodic hard update
+        if steps % hard_update_interval == 0:
+            hard_update(target_net, local_net)
+        
+        steps += 1
+
+print("Training with periodic hard updates completed.")
